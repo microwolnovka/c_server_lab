@@ -40,17 +40,17 @@ int main(int argc, char *argv[])
     int sockfd, portno, n;
 
 
-    char buffer[256];
-    sockfd = get_connect("localhost",4444);
-    printf("Please enter the file location: ");
-    bzero(buffer,256);
-    fgets(buffer,255,stdin);
-    puts(buffer);
-    n = write(sockfd,buffer,strlen(buffer));
+    char buffer[1000];
+    printf("start\n");
+    sockfd = get_connect("localhost",4441);
+    printf("connected");
+    puts(argv[1]);
+
+    n = write(sockfd,argv[1],strlen(argv[1]));
     if (n < 0)
          error("ERROR writing to socket");
-    bzero(buffer,256);
-    n = read(sockfd,buffer,255);
+    bzero(buffer,1000);
+    n = read(sockfd,buffer,1000);
     if (n < 0)
          error("ERROR reading from socket");
     printf("%s\n",buffer);

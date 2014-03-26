@@ -5,11 +5,21 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <string.h>
+#include <pthread.h>
+
 void error(char *msg)
 {
     perror(msg);
     exit(1);
 }
+
+typedef struct str_thdata
+{
+    int connection;
+    char name[256];
+} thrdata;
+
+
 
 int create_connection(int portno)
 {
@@ -42,21 +52,47 @@ int get_client_connect(int socket_d)
     return cli_d;
 }
 
+void write_to_socket(void *ptr){
+   FILE* f;
+   int err;
+   char data[10000];
+   thrdata *arg;
+   arg = (thrdata *) ptr;
+   printf("gotovims9 otpravit %s\nconnection - %d\n",arg->name,arg->connection);
+   f = fopen(arg->name, "r");
+   if(f == NULL) error("failik is not open");
+   while(1){
+       if(!fgets(data,sizeof(data),f))break;
+       printf("read is good    %d\n",arg->connection);
+       err = write(arg->connection, data,strlen(data));
+       if(err < 0 ){
+           error("error on the writing file");
+       }
+   }
+   close(arg->connection);
+}
+
+
 int main(int argc, char *argv[])
 {
     int my_socket, n, connection;
     char buffer[256];
-    my_socket = create_connection(4444);
+    my_socket = create_connection(4441);
     bzero(buffer,256);
     while(1){
+        pthread_t pthr;
+        thrdata data;
+
         connection = get_client_connect(my_socket);
         n = read(connection,buffer,255);
         if(strlen(buffer) == 0) return 0;
         if (n < 0) error("ERROR reading from socket");
         printf("Here is the message: %s\n",buffer);
-        n = write(connection,"I got your message",18);
-        if (n < 0) error("ERROR writing to socket");
-        close(connection);
+        data.connection = connection;
+        strcpy(data.name,buffer);
+
+        pthread_create(&pthr, NULL, (void *) &write_to_socket,(void *)&data);
+
     }
 
     return 0;
