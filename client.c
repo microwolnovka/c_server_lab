@@ -41,21 +41,19 @@ int main(int argc, char *argv[])
     FILE *file =  fopen("recieved.file","w");
     char buffer[LENGTH];
     printf("start\n");
-    sockfd = get_connect("localhost",4456);
-    printf("connected %d",sizeof(argv[1]));
-    puts(argv[1]);
+    portno = atoi(argv[2]);
+    sockfd = get_connect(argv[1],portno);
+    printf("connected %d",sizeof(argv[3]));
+    puts(argv[3]);
     bzero(buffer,LENGTH);
 
-    send(sockfd, argv[1], strlen(argv[1]), 0);
+    send(sockfd, argv[3], strlen(argv[3]), 0);
     recv(sockfd, buffer, LENGTH, 0);
-    printf("get file size %s\n",buffer);
     fileSize = atoi(buffer);
     readSize = 0;
-    printf("%dreadsize\n filesize %d\n",readSize,fileSize);
     bzero(buffer,LENGTH);
     while (readSize< fileSize) {
         int r = recv(sockfd, buffer, LENGTH, 0);
-        printf("%s%d\n",buffer,r);
         readSize += r;
         fwrite(buffer, 1, r, file);
     }

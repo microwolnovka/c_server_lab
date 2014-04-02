@@ -7,7 +7,7 @@
 #include <string.h>
 #include <pthread.h>
 #define LENGTH 1024
-
+#define _ERVER_USING_THREADS_
 void error(char *msg)
 {
     perror(msg);
@@ -67,14 +67,11 @@ void write_to_socket(void *ptr){
    rewind (f);
    snprintf(data, LENGTH, "%ld", fileSize);
    send(arg->connection, data, 1024, 0);
-   printf("%ld %ld\n",fileSize,size);
-   printf("%s\n",data);
    while(size < fileSize){
        int read = 0,sent = 0;
        read = fread(data,1,LENGTH,f);
        sent = send(arg->connection, data, read, 0 );
        size+= sent;
-       printf("%ld size\n %d read\n %d sent\n",size,read,sent);
    }
 
    printf("size of %ld",size);
@@ -86,7 +83,7 @@ int main(int argc, char *argv[])
 {
     int my_socket, n, connection;
     char buffer[256];
-    my_socket = create_connection(4456);
+    my_socket = create_connection(atoi(argv[1]));
     bzero(buffer,256);
     while(1){
         pthread_t pthr;
@@ -98,9 +95,15 @@ int main(int argc, char *argv[])
         printf("Here is the message: %s\n",buffer);
         data.connection = connection;
         strcpy(data.name,buffer);
-
+#ifdef _SERVER_USING_THREADS_
         pthread_create(&pthr, NULL, (void *) &write_to_socket,(void *)&data);
-
+#else
+        pid_t childPid = fork();
+        if (childPid == 0){
+            write_to_socket((void*)&data);
+            exit(0);
+        }
+#endif
     }
 
     return 0;

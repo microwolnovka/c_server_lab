@@ -1,5 +1,6 @@
+CC:= $(CROSS_COMPILE)gcc
 make:
-	gcc client.c -o client
-	gcc server.c -o server -lpthread
+	$(CC) client.c -o client
+	$(CC) server.c -o server -lpthread
 clean:
 	rm client server
