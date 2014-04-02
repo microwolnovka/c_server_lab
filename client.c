@@ -3,7 +3,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
-
+#define LENGTH 1024
 void error(char *msg)
 {
     perror(msg);
@@ -37,22 +37,28 @@ int get_connect(char * server_name, int portno){
 
 int main(int argc, char *argv[])
 {
-    int sockfd, portno, n;
-
-
-    char buffer[1000];
+    int sockfd, portno, n, fileSize, readSize;
+    FILE *file =  fopen("recieved.file","w");
+    char buffer[LENGTH];
     printf("start\n");
-    sockfd = get_connect("localhost",4441);
-    printf("connected");
+    sockfd = get_connect("localhost",4456);
+    printf("connected %d",sizeof(argv[1]));
     puts(argv[1]);
+    bzero(buffer,LENGTH);
 
-    n = write(sockfd,argv[1],strlen(argv[1]));
-    if (n < 0)
-         error("ERROR writing to socket");
-    bzero(buffer,1000);
-    n = read(sockfd,buffer,1000);
-    if (n < 0)
-         error("ERROR reading from socket");
-    printf("%s\n",buffer);
+    send(sockfd, argv[1], strlen(argv[1]), 0);
+    recv(sockfd, buffer, LENGTH, 0);
+    printf("get file size %s\n",buffer);
+    fileSize = atoi(buffer);
+    readSize = 0;
+    printf("%dreadsize\n filesize %d\n",readSize,fileSize);
+    bzero(buffer,LENGTH);
+    while (readSize< fileSize) {
+        int r = recv(sockfd, buffer, LENGTH, 0);
+        printf("%s%d\n",buffer,r);
+        readSize += r;
+        fwrite(buffer, 1, r, file);
+    }
+    printf("read size%d\n filesize %d\n",readSize,fileSize);
     return 0;
 }

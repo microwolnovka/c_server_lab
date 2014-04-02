@@ -6,6 +6,7 @@
 #include <netinet/in.h>
 #include <string.h>
 #include <pthread.h>
+#define LENGTH 1024
 
 void error(char *msg)
 {
@@ -54,21 +55,29 @@ int get_client_connect(int socket_d)
 
 void write_to_socket(void *ptr){
    FILE* f;
-   int err;
-   char data[10000];
+   char data[LENGTH];
+   unsigned long size=0,fileSize;
    thrdata *arg;
    arg = (thrdata *) ptr;
    printf("gotovims9 otpravit %s\nconnection - %d\n",arg->name,arg->connection);
    f = fopen(arg->name, "r");
    if(f == NULL) error("failik is not open");
-   while(1){
-       if(!fgets(data,sizeof(data),f))break;
-       printf("read is good    %d\n",arg->connection);
-       err = write(arg->connection, data,strlen(data));
-       if(err < 0 ){
-           error("error on the writing file");
-       }
+   fseek (f, 0 , SEEK_END);
+   fileSize = ftell (f);
+   rewind (f);
+   snprintf(data, LENGTH, "%ld", fileSize);
+   send(arg->connection, data, 1024, 0);
+   printf("%ld %ld\n",fileSize,size);
+   printf("%s\n",data);
+   while(size < fileSize){
+       int read = 0,sent = 0;
+       read = fread(data,1,LENGTH,f);
+       sent = send(arg->connection, data, read, 0 );
+       size+= sent;
+       printf("%ld size\n %d read\n %d sent\n",size,read,sent);
    }
+
+   printf("size of %ld",size);
    close(arg->connection);
 }
 
@@ -77,16 +86,15 @@ int main(int argc, char *argv[])
 {
     int my_socket, n, connection;
     char buffer[256];
-    my_socket = create_connection(4441);
+    my_socket = create_connection(4456);
     bzero(buffer,256);
     while(1){
         pthread_t pthr;
         thrdata data;
-
+        bzero(buffer,256);
         connection = get_client_connect(my_socket);
-        n = read(connection,buffer,255);
-        if(strlen(buffer) == 0) return 0;
-        if (n < 0) error("ERROR reading from socket");
+
+        recv(connection, buffer, 256, 0);
         printf("Here is the message: %s\n",buffer);
         data.connection = connection;
         strcpy(data.name,buffer);
